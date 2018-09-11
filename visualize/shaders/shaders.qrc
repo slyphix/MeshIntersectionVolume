@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>wireframe_vertex.glsl</file>
+        <file>wireframe_geometry.glsl</file>
+        <file>wireframe_fragment.glsl</file>
+
+        <file>line_vertex.glsl</file>
+        <file>line_geometry.glsl</file>
+        <file>line_fragment.glsl</file>
+    </qresource>
+</RCC>
