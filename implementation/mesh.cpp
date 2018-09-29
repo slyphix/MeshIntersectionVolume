@@ -221,7 +221,8 @@ void find_opposing_indices(std::vector<std::size_t> &opposing_index, const std::
         // find vertices adjacent to edge
         std::tie(it_start, it_end) = third_vertex.equal_range(std::minmax(start, end));
         // range should contain exactly 2 elements
-        assert(it_start != it_end);
+        //if (third_vertex.count(std::minmax(start, end)) != 2)
+        //    std::exit(1);
         triangle_index first = it_start->second;
         triangle_index second = (++it_start)->second;
         // one of those is the abc triangle, but we need the other one

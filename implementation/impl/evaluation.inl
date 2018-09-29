@@ -184,10 +184,21 @@ myfloat local_intersect_line_triangle(const ntriangle &t, const triangle_side &t
     // intersection point
     myvec isp = (1 - scalar) * ts.start + scalar * ts.end;
 
+#if defined(MI_DEBUG) && !defined(MI_CUDA_ENABLED)
+    #pragma omp critical (IO)
+    std::cout << "found intersection point at " << isp << std::endl;
+#endif
+
     lic.on_segment += 1;
     if (scalar < lic.closest_point) {
         lic.closest_point = scalar;
-        lic.is_start_inside = glm::dot(ts.start - isp, t.n) > 0;
+        lic.is_start_inside = glm::dot(ts.start - isp, t.n) < 0;
+
+#if defined(MI_DEBUG) && !defined(MI_CUDA_ENABLED)
+        #pragma omp critical (IO)
+        std::cout << "  intersection minimizes scalar to " << scalar << std::endl;
+        std::cout << "  is start point inside: " << lic.is_start_inside << std::endl;
+#endif
     }
 
     return generate_intersection_terms(isp, ts.end - ts.start, ts.n, t.n);

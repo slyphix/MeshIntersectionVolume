@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.3)
 
 # set(VISUALIZE ON)
+# set(LOCALIZED ON)
 # set(CUDA_SUPPORT ON)
 # set(OMP_SUPPORT ON)
-# set(BENCHMARKS ON)
+set(TIMED ON)
 # set(SPARSE_EVALUATION ON)
 # set(SINGLE_PRECISION ON)
 
@@ -28,8 +29,8 @@ set(SOURCE_FILES
         mesh.cpp
         mesh.h
         intersect.h
-#        localized.cpp
-#        localized.h
+        localized.cpp
+        localized.h
         globals.h
         evaluation.h
         impl/cpu.inl
@@ -46,11 +47,18 @@ if(OMP_SUPPORT)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-if(BENCHMARKS)
-    message(STATUS "Benchmarks enabled")
+if(TIMED)
+    message(STATUS "Timer enabled")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMI_BENCHMARK")
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DMI_BENCHMARK")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMI_TIMED")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DMI_TIMED")
+endif()
+
+if(LOCALIZED)
+    message(STATUS "Localized volume computation enabled")
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMI_LOCALIZED -DMI_LOCALIZED_CONSISTENCY_CHECKS")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DMI_LOCALIZED -DMI_LOCALIZED_CONSISTENCY_CHECKS")
 endif()
 
 if(SINGLE_PRECISION)

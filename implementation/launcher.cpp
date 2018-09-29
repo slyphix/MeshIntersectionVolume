@@ -1,9 +1,8 @@
 
 #include "globals.h"
 #include "intersect.h"
+#include "localized.h"
 #include "mesh.h"
-
-#include "debugutils.hpp"
 
 #ifdef MI_VISUALIZE
 #include "visualize.h"
@@ -11,13 +10,16 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
+#undef GLM_ENABLE_EXPERIMENTAL
 
 #include <algorithm>
-#include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <numeric>
 
+#ifdef MI_TIMED
+#include <chrono>
+#endif
 
 void center_pair_around_origin(std::vector<triangle> &fst, std::vector<triangle> &snd) {
 
@@ -46,15 +48,17 @@ void center_pair_around_origin(std::vector<triangle> &fst, std::vector<triangle>
 //mymat4 flip = glm::rotate(pi / 2, myvec(0, 1, 0)) * glm::rotate(pi, myvec(1, 0, 0));
 //mymat4 scale = glm::scale(myvec(10));
 //mymat4 translate = glm::translate(myvec(-5));
-//std::vector<triangle> first_mesh = mesh::make_tetrahedron(translate * scale);
-//std::vector<triangle> second_mesh = mesh::make_tetrahedron(scale * flip);
+//first_mesh = mesh::make_tetrahedron(translate * scale);
+//second_mesh = mesh::make_tetrahedron(scale * flip);
 
-//std::vector<triangle> first_mesh {{ {-3, 0, -5}, {-3, 0, 2}, {5, 0, 0} }};
-//std::vector<triangle> second_mesh {{ {-4, -3, 0}, {4, -3, 0}, {0, 3, 0} }};
+//first_mesh = {{ {-3, 0, -5}, {-3, 0, 2}, {5, 0, 0} }};
+//second_mesh = {{ {-4, -3, 0}, {4, -3, 0}, {0, 3, 0} }};
 
-//std::vector<triangle> first_mesh { { {-0.5, 0, 0}, {0.5, 0, 0}, {0, 0.2, 1} } };
-//std::vector<triangle> second_mesh { { {0, -0.5, 0}, {0, 0.5, 0}, {0, 0, 1} },
-//                                    { {0, 0.5, 0}, {0, -0.5, 0}, {0.3, 0, -0.5} } };
+//first_mesh = { { {-0.5, 0, 0}, {0.5, 0, 0}, {0, 0.2, 1} } };
+//second_mesh = { { {0, -0.5, 0}, {0, 0.5, 0}, {0, 0, 1} }, { {0, 0.5, 0}, {0, -0.5, 0}, {0.3, 0, -0.5} } };
+
+//first_mesh = mesh::make_axis_aligned_unit_cube(glm::rotate(-pi / 5, myvec(0, 0, 1)) * glm::scale(myvec(1, 3, 2)));
+//second_mesh = mesh::make_axis_aligned_unit_cube(glm::translate(myvec(1.5, 0, 0)) * glm::rotate(pi / 4, myvec(0, 1, 0)) * glm::scale(myvec(1, 3, 2)));
 
 #ifdef MI_VISUALIZE
 std::vector<float> lines;
@@ -63,56 +67,6 @@ std::vector<float> lines;
 int main(int argc, char **argv) {
 
     std::cout << std::setprecision(std::numeric_limits<myfloat>::digits10 + 1);
-
-#ifdef MI_BENCHMARK
-
-    int runs = 10;
-    std::string filename("sphere10.stl");
-    myfloat translation(0.5);
-
-    if (argc > 1) {
-        filename = argv[1];
-    }
-    if (argc > 2) {
-        translation = std::stof(argv[2]);
-    }
-    if (argc > 3) {
-        runs = std::stoi(argv[3]);
-    }
-
-    std::vector<triangle> original_mesh = mesh::load_mesh(filename);
-    std::cout << "Loaded " << filename << " (" << original_mesh.size() << " triangles)" << std::endl;
-
-    myfloat volume_sum = 0;
-    double time_sum = 0;
-
-    for (int i = 0; i < runs; ++i) {
-        std::vector<triangle> mesh = original_mesh;
-        std::vector<triangle> mesh_copy = original_mesh;
-        mesh::transform(glm::translate(myvec(translation, 0, 0)), mesh_copy);
-
-        center_pair_around_origin(mesh, mesh_copy);
-        mesh::perturb_vertices(mesh);
-
-        std::vector<ntriangle> mesh_normals = mesh::generate_normals(mesh);
-        std::vector<ntriangle> mesh_copy_normals = mesh::generate_normals(mesh_copy);
-
-        std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
-        myfloat volume = mesh::intersection_volume(mesh_normals, mesh_copy_normals);
-        std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
-
-        std::chrono::duration<double> delta = end - start;
-        std::cout << volume << " | " << delta.count() << " s\n";
-
-        volume_sum += volume;
-        time_sum += delta.count();
-    }
-    std::cout << std::endl;
-    std::cout << "Average over " << runs << " runs:" << std::endl;
-    std::cout << "Intersection volume: " << (volume_sum / runs) << std::endl;
-    std::cout << "Elapsed time: " << (time_sum / runs) << " s" << std::endl;
-
-#else
 
     std::vector<triangle> first_mesh;
     std::vector<triangle> second_mesh;
@@ -132,6 +86,7 @@ int main(int argc, char **argv) {
         // compute intersection
         center_pair_around_origin(first_mesh, second_mesh);
         mesh::perturb_vertices(first_mesh);
+        mesh::perturb_vertices(second_mesh);
 
         std::vector<ntriangle> first_mesh_normals = mesh::generate_normals(first_mesh);
         std::vector<ntriangle> second_mesh_normals = mesh::generate_normals(second_mesh);
@@ -139,16 +94,24 @@ int main(int argc, char **argv) {
         std::cout << "Preparation complete. Triangles: "
                   << first_mesh.size() << " vs " << second_mesh.size() << "." << std::endl;
 
+#ifdef MI_TIMED
         std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
+#endif
+#ifdef MI_LOCALIZED
+        myfloat volume = mesh::localized_intersection_volume(first_mesh_normals, second_mesh_normals);
+#else
         myfloat volume = mesh::intersection_volume(first_mesh_normals, second_mesh_normals);
+#endif
+#ifdef MI_TIMED
         std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+#endif
 
         std::cout << "Intersection volume: " << volume << std::endl;
+#ifdef MI_TIMED
         std::chrono::duration<double> delta = end - start;
         std::cout << delta.count() << " seconds elapsed." << std::endl;
-    }
-
 #endif
+    }
 
 #ifdef MI_VISUALIZE
     visualize::init(argc, argv);

@@ -272,7 +272,7 @@ void ShaderWidget::initializeGL() {
 
     if (terms_count > 0) {
         glBindBuffer(GL_ARRAY_BUFFER, terms_vbo_id);
-        glBufferData(GL_ARRAY_BUFFER, terms_count * 12 * sizeof(QVector3D), terms_buffer, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, terms_count * 12 * sizeof(float), terms_buffer, GL_STATIC_DRAW);
     }
 
     reset_view();
@@ -404,8 +404,8 @@ void ShaderWidget::mouseReleaseEvent(QMouseEvent*) {}
 void ShaderWidget::mouseMoveEvent(QMouseEvent* event) {
 
     if (mouse_button == Qt::LeftButton) {
-        yaw += (event->x() - click_start_position_x) * -0.1f;
-        pitch += (event->y() - click_start_position_y) * -0.1f;
+        yaw += (event->x() - click_start_position_x) * 0.1f;
+        pitch += (event->y() - click_start_position_y) * 0.1f;
 
         update_view();
     }
